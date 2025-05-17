@@ -6,7 +6,7 @@ a = Analysis(
 	['main.py'],
 	pathex=[],
 	binaries=[],
-	datas=[('hue_config.json', '.')],  # Include config file
+	datas=[],  # Remove from here, we'll handle differently
 	hiddenimports=['config_loader', 'hue_controller', 'gmail_monitor'],
 	hookspath=[],
 	hooksconfig={},
@@ -17,6 +17,19 @@ a = Analysis(
 	cipher=block_cipher,
 	noarchive=False,
 )
+
+# Create a default config if needed, but don't bundle it
+import json
+import os
+from config_loader import DEFAULT_CONFIG
+
+default_config_path = 'hue_config.json'
+if not os.path.exists(default_config_path):
+	with open(default_config_path, 'w') as f:
+		json.dump(DEFAULT_CONFIG, f, indent=4)
+	print(f"Created template config file: {default_config_path}")
+	print("NOTE: This file is NOT bundled with the executable")
+
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
 exe = EXE(

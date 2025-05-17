@@ -2,6 +2,7 @@
 import os
 import json
 import sys
+import tempfile
 
 # Default configuration
 DEFAULT_CONFIG = {
@@ -24,29 +25,44 @@ DEFAULT_CONFIG = {
 	"flicker_interval": 0.2
 }
 
-def get_config_path():
-	"""Get the path to the config file based on the application's location"""
+def get_application_path():
+	"""Get the real application path, even when running as a PyInstaller bundle"""
 	if getattr(sys, 'frozen', False):
-		# Running as a bundled exe
-		app_dir = os.path.dirname(sys.executable)
+		# If the application is run as a PyInstaller bundle
+		if hasattr(sys, '_MEIPASS'):
+			# PyInstaller creates a temp folder and stores its path in _MEIPASS
+			# BUT we don't want the temp path, we want the actual EXE location
+			return os.path.dirname(sys.executable)
+		else:
+			return os.path.dirname(sys.executable)
 	else:
-		# Running as a script
-		app_dir = os.path.dirname(os.path.abspath(__file__))
-		
-	return os.path.join(app_dir, 'hue_config.json')
+		# Running as a normal Python script
+		return os.path.dirname(os.path.abspath(__file__))
+
+def get_config_path():
+	"""Get the path to the config file based on the application's actual location"""
+	app_dir = get_application_path()
+	config_path = os.path.join(app_dir, 'hue_config.json')
+	return config_path
 
 def create_default_config(config_path):
 	"""Create a default configuration file"""
-	with open(config_path, 'w') as config_file:
-		json.dump(DEFAULT_CONFIG, config_file, indent=4)
-	print(f"Created default configuration file at: {config_path}")
+	try:
+		with open(config_path, 'w') as config_file:
+			json.dump(DEFAULT_CONFIG, config_file, indent=4)
+		print(f"Created default configuration file at: {config_path}")
+	except Exception as e:
+		print(f"Warning: Could not create default config file: {e}")
+		print("Will use default configuration in memory instead")
 
 def load_config():
 	"""Load configuration from file or create default if it doesn't exist"""
 	config_path = get_config_path()
+	print(f"Looking for configuration at: {config_path}")
 	
 	# Create default config if file doesn't exist
 	if not os.path.exists(config_path):
+		print(f"Config file not found: {config_path}")
 		create_default_config(config_path)
 	
 	# Load config
@@ -78,6 +94,8 @@ FLICKER_INTERVAL = CONFIG["flicker_interval"]
 
 # For testing
 if __name__ == "__main__":
+	print("Application path:", get_application_path())
+	print("Config path:", get_config_path())
 	print("Current configuration:")
 	for key, value in CONFIG.items():
 		# Don't print password
