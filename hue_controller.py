@@ -2,7 +2,14 @@
 import requests
 import json
 import time
-from config import HUE_BRIDGE_IP, HUE_API_KEY
+# Import from config_loader instead of config
+from config_loader import (
+	HUE_BRIDGE_IP, 
+	HUE_API_KEY, 
+	LIGHT_GROUP, 
+	FLICKER_TIMES, 
+	FLICKER_INTERVAL
+)
 
 class HueController:
 	def __init__(self, bridge_ip=None, api_key=None):
@@ -111,8 +118,6 @@ def generate_api_key(bridge_ip):
 # For testing this module
 if __name__ == "__main__":
 	# Test connection to bridge
-	from config import HUE_BRIDGE_IP, HUE_API_KEY, LIGHT_GROUP, FLICKER_TIMES, FLICKER_INTERVAL
-	
 	# If API key is not configured, try to generate one
 	if HUE_API_KEY == "your_api_key":
 		print("No API key configured. Press the link button on your Hue bridge, then press Enter...")
@@ -120,7 +125,7 @@ if __name__ == "__main__":
 		api_key = generate_api_key(HUE_BRIDGE_IP)
 		if api_key:
 			print(f"Generated API key: {api_key}")
-			print("Update this key in config.py")
+			print("Update this key in your hue_config.json file")
 		else:
 			print("Failed to generate API key")
 	else:

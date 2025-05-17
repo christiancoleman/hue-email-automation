@@ -4,7 +4,8 @@ import email
 import time
 import re
 from datetime import datetime
-from config import (
+# Import from config_loader instead of config
+from config_loader import (
 	EMAIL_ADDRESS, 
 	EMAIL_APP_PASSWORD, 
 	EMAIL_CHECK_INTERVAL,

@@ -1,107 +1,154 @@
 # Hue Email Automation
 
-A Python script that monitors for specific emails and triggers Philips Hue lights to flicker.
+A Python application that monitors Gmail for specific messages and triggers Philips Hue lights to flicker - perfect for important notifications or alerts.
 
-## Setup
+## Features
 
-1. Install required packages:
+- **Email Monitoring**: Detect emails from specific senders or with specific keywords in the subject
+- **Light Control**: Flicker any Hue light group (rooms, zones, etc.)
+- **External Configuration**: Use a JSON config file that can be modified without rebuilding
+- **Modular Design**: Each component can be tested separately
+- **Executable Support**: Can be packaged as a standalone Windows executable
+
+## Project Structure
+
+- `config_loader.py` - Loads configuration from external JSON file
+- `hue_config.json` - External configuration file (created automatically if missing)
+- `hue_controller.py` - Philips Hue API interface
+- `gmail_monitor.py` - Gmail monitoring module
+- `main.py` - Main script that ties everything together
+- `gmail_setup.md` - Instructions for Gmail app password setup
+- `hue.spec` - PyInstaller specification for building the executable
+- `executable_instructions.md` - Detailed guide for building and using the executable
+
+## Setup & Installation
+
+### 1. Install Dependencies
 ```
 pip install requests
 ```
 
-2. Configure your settings in `config.py`:
-	- Hue Bridge IP and API key
-	- Gmail credentials (see `gmail_setup.md`)
-	- Email trigger settings
-	- Light group settings
+### 2. Configure the Application
+Edit `hue_config.json` with your settings:
+```json
+{
+	"hue_bridge_ip": "192.168.1.x",
+	"hue_api_key": "your_api_key",
+	"email_address": "your.email@gmail.com",
+	"email_app_password": "your_app_password",
+	"email_check_interval": 15,
+	"email_senders": ["important@example.com"],
+	"email_subjects": ["urgent", "alert"],
+	"light_group": "All",
+	"flicker_times": 5,
+	"flicker_interval": 0.2
+}
+```
 
-3. Run the script:
+### 3. Get Your Hue API Key
+If you don't have a Hue API key:
+1. Edit `hue_config.json` with your Hue Bridge IP address
+2. Run `python hue_controller.py`
+3. When prompted, press the link button on your Hue Bridge
+4. Copy the API key that's generated and update `hue_config.json`
+
+### 4. Configure Gmail Access
+Follow the instructions in `gmail_setup.md` to create a Gmail app password:
+1. Go to your Google Account → Security → 2-Step Verification
+2. Enable 2-Step Verification if not already enabled
+3. Scroll down to "App passwords" and create a new one
+4. Copy the 16-character password to `hue_config.json`
+
+## Running the Application
+
+### As Python Script
 ```
 python main.py
 ```
 
-## First Run & API Key
+### As Executable
+1. Install PyInstaller: `pip install pyinstaller`
+2. Build using spec file: `pyinstaller hue.spec`
+3. Run the generated executable in `dist/hue-email-automation.exe`
 
-If you don't have a Hue API key:
-1. Edit `config.py` with your Hue Bridge IP address
-2. Run `python hue_controller.py`
-3. When prompted, press the link button on your Hue Bridge
-4. Copy the API key that's generated and update `config.py`
+## Email Trigger Logic
 
-## Project Structure
+The application will monitor for emails that match EITHER:
+- From ANY sender in the `email_senders` list OR
+- Containing ANY keyword in the `email_subjects` list
 
-- `config.py` - Configuration settings
-- `hue_controller.py` - Philips Hue API interface
-- `gmail_monitor.py` - Gmail monitoring module
-- `main.py` - Main script that ties everything together
-- `gmail_setup.md` - Instructions for Gmail app password
+This provides flexibility to monitor for multiple conditions simultaneously.
 
-## Customizing Triggers
+## Customizing Behavior
 
-Edit `config.py` to change:
-- Which email senders trigger the lights
-- Which keywords in email subjects trigger the lights
-- How the lights flicker (times and interval)
-- Which light group to control
+All settings can be adjusted in `hue_config.json`:
 
-## Running as a Service
+```json
+{
+	"hue_bridge_ip": "192.168.x.x",
+	"hue_api_key": "your_api_key",
+	"email_address": "youremail@gmail.com",
+	"email_app_password": "your_app_password",
+	"email_check_interval": 15,
+	"email_senders": [
+		"no-reply@noa.nintendo.com", 
+		"nintendo-noreply@nintendo.net"
+	],
+	"email_subjects": [
+		"potato", 
+		"new"
+	],
+	"light_group": "All",
+	"flicker_times": 5,
+	"flicker_interval": 0.2
+}
+```
 
-To run continuously in the background:
-1. Windows: Use Task Scheduler to run on startup
-2. Linux: Create a systemd service
-3. Mac: Create a launchd service
+## Running as a Background Service
+
+### Windows
+1. Use Task Scheduler to run the executable at startup:
+   - Action: Start a program
+   - Program: Path to your exe
+   - "Start in": Folder containing your exe
+
+### Adding to Startup
+Create a shortcut to the executable in:
+`C:\Users\[Username]\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup`
 
 ## Troubleshooting
 
-- If lights don't flicker, check your Hue Bridge IP and API key
-- If emails aren't detected, verify your Gmail app password
-- Run individual modules directly for testing:
-	- `python hue_controller.py` - Test Hue connection
-	- `python gmail_monitor.py` - Test Gmail monitoring
+### Diagnostics
+Run individual modules directly for testing:
+- `python hue_controller.py` - Test Hue connection
+- `python gmail_monitor.py` - Test Gmail monitoring
+- `python gmail_monitor.py --all` - Test with all emails (including read ones)
+- `python gmail_monitor.py --monitor` - Run continuous monitoring
 
-## FYI FUTURE ME
+### Common Issues
+- **No API key**: Run `python hue_controller.py` to generate one
+- **Email connectivity**: Verify app password and account settings
+- **Unicode errors**: The application handles special characters, but check email subjects/addresses for unusual characters
+- **Lights not found**: Verify group names match exactly as shown in the Hue app
 
-- Documentation on how to use Hue as a dev: https://developers.meethue.com/develop/get-started-2/
-- Can use https://discovery.meethue.com/ to find your IP address
-- Go to https://<bridge ip address>/debug/clip.html
-	- Ex: https://192.168.68.63/debug/clip.html
+### Useful Resources
+- Hue Developer Documentation: https://developers.meethue.com/develop/get-started-2/
+- Find your Hue Bridge IP: https://discovery.meethue.com/
+- Hue Debug Tool: https://[bridge-ip]/debug/clip.html
 
-## CONFIG.PY NEEDED - EXAMPLE BELOW:
+## Development Notes
 
-```python
-# Hue Email Automation - Configuration
-# Fill in your personal configuration details here
+### External Configuration
+The application uses `config_loader.py` to manage external configuration. When packaged as an executable:
+1. It looks for `hue_config.json` in the same directory as the executable
+2. If not found, it creates a default configuration file
+3. All settings can be modified without rebuilding
 
-# Hue Bridge Configuration
-HUE_BRIDGE_IP = ""  # Replace with your Hue Bridge IP
-HUE_API_KEY = ""   # Replace with the API key/username from registration
+### PyInstaller
+- The `hue.spec` file contains the build specification for PyInstaller
+- It includes `hue_config.json` in the build automatically
+- Build the executable with: `pyinstaller hue.spec`
 
-# Email Configuration (Gmail)
-EMAIL_ADDRESS = ""
-EMAIL_APP_PASSWORD = ""  # Gmail app-specific password
-EMAIL_CHECK_INTERVAL = 15  # Seconds between email checks
-
-# Triggers
-# The script will trigger if an email meets EITHER of these criteria:
-# 1. The email is from ANY sender in the EMAIL_SENDERS list
-# 2. The email subject contains ANY keyword in the EMAIL_SUBJECTS list
-#
-# For example, with the settings below, the script will trigger for:
-# - Any email from nintendo-noreply@nintendo.net OR
-# - Any email from no-reply@noa.nintendo.com OR
-# - Any email with "potato" in the subject OR
-# - Any email with "new" in the subject
-EMAIL_SENDERS = [""]
-EMAIL_SUBJECTS = [""]  
-
-# To only trigger on specific senders (no subject matching), leave EMAIL_SUBJECTS as an empty list:
-# EMAIL_SUBJECTS = []
-
-# To only trigger on specific subjects (any sender), leave EMAIL_SENDERS as an empty list:
-# EMAIL_SENDERS = []
-
-# Light Configuration
-LIGHT_GROUP = ""  # Group name or ID to flicker
-FLICKER_TIMES = 5    # Number of flicker cycles
-FLICKER_INTERVAL = 0.2  # Seconds between state changes
-```
+### Console vs. Hidden Mode
+- The current spec file builds with a console window (`console=True`)
+- For a hidden background application, change to `console=False` in the spec file and rebuild
